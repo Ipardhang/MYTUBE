@@ -393,7 +393,7 @@ export default function InternshipFeatures() {
               {plans.map((item) => (
                 <article key={item.name} className={cardClass + " flex flex-col " + (plan === item.name ? "ring-2 ring-red-500" : "")}>
                   <div className="flex items-center justify-between"><span className="text-sm font-semibold">{item.name}</span>{plan === item.name && <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-600">Current</span>}</div>
-                  <div className="mt-4 text-3xl font-bold">{item.price}<span className={"ml-1 text-sm font-normal " + mutedClass}>/ month</span></div>
+                  <div className="mt-4 text-3xl font-bold">{item.name === "Free" ? item.price : "₹" + (Number(item.price.replace("₹", "")) * (billingPeriod === "monthly" ? 1 : billingPeriod === "quarterly" ? 3 : 12))}<span className={"ml-1 text-sm font-normal " + mutedClass}>/ {billingPeriod === "monthly" ? "month" : billingPeriod === "quarterly" ? "quarter" : "year"}</span></div>
                   <p className={"mt-2 text-sm " + mutedClass}>{item.daily} downloads per day</p>
                   <ul className={"mt-5 flex-1 space-y-3 text-sm " + mutedClass}>{item.perks.map((perk) => <li key={perk} className="flex items-center gap-2"><Check size={15} className="text-emerald-500" />{perk}</li>)}</ul>
                   <button onClick={() => choosePlan(item.name)} className={"mt-6 rounded-xl px-4 py-2.5 text-sm font-semibold " + (item.name === "Gold" ? "bg-red-600 text-white hover:bg-red-700" : theme === "dark" ? "bg-slate-700 hover:bg-slate-600" : "bg-slate-100 hover:bg-slate-200")}>{item.name === plan ? "Current plan" : "Continue to checkout"}</button>
