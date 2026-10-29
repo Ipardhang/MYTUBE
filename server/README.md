@@ -9,7 +9,7 @@ cd server
 npm install
 ```
 
-Create `.env`:
+Copy `.env.example` to `.env` and fill in your values:
 
 ```env
 PORT=5000
