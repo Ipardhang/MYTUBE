@@ -13,6 +13,8 @@ Create `.env`:
 
 ```env
 PORT=5000
+APP_ORIGINS=http://localhost:3000
+FIREBASE_PROJECT_ID=your-firebase-project-id
 DB_URL=mongodb+srv://<user>:<password>@<cluster>/<database>
 PROFANITY_TERMS=term1,term2
 TRANSLATION_API_URL=https://<your-libretranslate-host>/translate
@@ -36,10 +38,10 @@ The API is available at http://localhost:5000. Keep `.env` out of Git.
 - `POST /comment/:id/report`
 - `POST /comment/:id/translate` (LibreTranslate-compatible endpoint required)
 
-Comment reports and edit history are stored with the comment. Reports are queued in the record and do not automatically delete a comment.
+Comment writes, votes and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports and edit history are stored with the comment. Reports are queued in the record and do not automatically delete a comment.
 
 ## Deployment notes
 
-Deploy this folder as a separate Node service (for example, Render) and set `DB_URL`, `PORT`, and optional translation/moderation settings. Set the frontend's `NEXT_PUBLIC_BACKEND_URL` to this service's HTTPS URL.
+Deploy this folder as a separate Node service (for example, Render) and set `DB_URL`, `PORT`, `APP_ORIGINS`, `FIREBASE_PROJECT_ID`, and optional translation/moderation settings. Set the frontend's `NEXT_PUBLIC_BACKEND_URL` to this service's HTTPS URL.
 
-The inherited training backend currently identifies users by the submitted MongoDB user ID. Before production, add Firebase ID-token verification and server-side OTP/trusted-device enforcement; never treat a client-supplied user ID as authentication. Payment, email, and multi-user call signaling also need provider credentials and server integration.
+Firebase ID tokens protect comment mutations and the token email is matched to the MongoDB user. The rest of the inherited API routes still need the same authorization middleware. Add OTP/trusted-device enforcement before production; never treat a client-supplied user ID as authentication. Payment, email, and multi-user call signaling also need provider credentials and server integration.
