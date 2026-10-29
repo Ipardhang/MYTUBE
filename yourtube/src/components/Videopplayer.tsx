@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
+import axiosInstance from "@/lib/axiosinstance";
 import { Captions, Maximize, Minimize, Pause, PictureInPicture2, Play, Settings2, Volume2, VolumeX } from "lucide-react";
 
 interface VideoPlayerProps {
@@ -34,10 +35,28 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
   const [buffering, setBuffering] = useState(false);
   const [captions, setCaptions] = useState(false);
   const [quality, setQuality] = useState("Auto");
-  const backend = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "";
-  const source = video?.filepath
-    ? (/^https?:\/\//i.test(video.filepath) ? video.filepath : backend.replace(/\/$/, "") + "/" + video.filepath.replace(/^\//, ""))
-    : "/video/vdo.mp4";
+  const [streamSource, setStreamSource] = useState("");
+  const [accessMessage, setAccessMessage] = useState("");
+  const source = streamSource || (!video?._id ? "/video/vdo.mp4" : "");
+  useEffect(() => {
+    if (!video?._id) { setStreamSource("/video/vdo.mp4"); return; }
+    let active = true;
+    setStreamSource("");
+    setAccessMessage("");
+    axiosInstance.get("/video/stream-token/" + video._id).then((response) => {
+      if (!active) return;
+      const base = (axiosInstance.defaults.baseURL || "").replace(/\/$/, "");
+      setStreamSource(base + response.data.url);
+    }).catch((error) => {
+      if (active) setAccessMessage(error?.response?.data?.message || "Sign in or upgrade your membership to play this video.");
+    });
+    return () => { active = false; };
+  }, [video?._id]);
+
+  useEffect(() => {
+    if (videoRef.current && source) videoRef.current.load();
+  }, [source]);
+
   const progressKey = "mytube-progress-" + video?._id;
 
   const showControls = useCallback(() => {
@@ -154,6 +173,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
     <div ref={wrapperRef} tabIndex={0} onKeyDown={onKeyDown} onMouseMove={showControls} onMouseLeave={() => playing && setVisible(false)} className={"group relative aspect-video overflow-hidden rounded-xl bg-black outline-none " + (theater ? "w-full" : "")}>
       <video
         ref={videoRef}
+        src={source || undefined}
         className="h-full w-full object-contain"
         preload="metadata"
         onPlay={() => { setPlaying(true); setBuffering(false); showControls(); }}
@@ -164,11 +184,11 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
         onClick={togglePlay}
         playsInline
       >
-        <source src={source} type="video/mp4" />
         <track kind="captions" srcLang="en" label="English captions" src="/captions/sample.vtt" />
         Your browser does not support the video tag.
       </video>
       {buffering && <div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="h-12 w-12 animate-spin rounded-full border-4 border-white/30 border-t-white" /></div>}
+      {accessMessage && <div className="absolute inset-0 grid place-items-center bg-black/75 p-6 text-center text-sm text-white">{accessMessage}</div>}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 to-transparent" />
       <div className={"absolute inset-x-0 bottom-0 p-3 text-white transition-opacity sm:p-4 " + (visible ? "opacity-100" : "pointer-events-none opacity-0")}>
         <div className="mb-2 flex items-center gap-2 text-xs">
