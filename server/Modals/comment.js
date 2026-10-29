@@ -17,6 +17,16 @@ const editSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const moderationSchema = new mongoose.Schema(
+  {
+    moderatorEmail: { type: String, required: true },
+    action: { type: String, enum: ["visible", "held"], required: true },
+    note: { type: String, default: "" },
+    moderatedon: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const commentschema = mongoose.Schema(
   {
     userid: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true, index: true },
@@ -29,6 +39,7 @@ const commentschema = mongoose.Schema(
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
     dislikedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
     reports: [reportSchema],
+    moderationHistory: [moderationSchema],
     editHistory: [editSchema],
     edited: { type: Boolean, default: false },
     editedon: { type: Date, default: null },
