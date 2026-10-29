@@ -42,7 +42,7 @@ The API is available at http://localhost:5000. Keep `.env` out of Git.
 - `GET /comment/moderation/reports` and `PATCH /comment/:id/moderation` (Firebase email must be listed in `ADMIN_EMAILS`)
 - `GET /video/stream-token/:id` and `GET /video/stream/:id?token=...` for short-lived membership-checked playback
 
-Comment writes, votes and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports, edit history and administrator moderation actions are stored with the comment. After three recent comments, the server issues a short arithmetic challenge; rate limits and challenges are in-memory for this single-server demo. Reports are queued in the record and do not automatically delete a comment.
+Comment writes, votes, and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports, edit history, and administrator moderation actions are stored with the comment. After three recent comments, the server issues a short arithmetic challenge; rate limits and challenges are in-memory for this single-server demo. Reports are queued in the record and do not automatically delete a comment.
 
 ## Membership and downloads
 
@@ -59,6 +59,8 @@ Membership and download mutations require a Firebase ID token matching the Mongo
 
 ## Deployment notes
 
-Deploy this folder as a separate Node service (for example, Render) and set `DB_URL`, `PORT`, `APP_ORIGINS`, `VIDEO_STREAM_SECRET`, `FIREBASE_PROJECT_ID`, Razorpay test keys, and optional translation/moderation settings. Set the frontend's `NEXT_PUBLIC_BACKEND_URL` to this service's HTTPS URL.
+Use [render.yaml](render.yaml) as the starting blueprint for a separate Render Node service (or configure the same settings manually). Set `DB_URL`, `APP_ORIGINS`, `VIDEO_STREAM_SECRET`, and optional Razorpay, translation, and receipt-email settings in the host. Configure the frontend's `NEXT_PUBLIC_BACKEND_URL` to this service's HTTPS URL.
 
-Firebase ID tokens protect comment mutations and the token email is matched to the MongoDB user. The rest of the inherited API routes still need the same authorization middleware. Add OTP/trusted-device enforcement before production; never treat a client-supplied user ID as authentication. Payment, email, and multi-user call signaling also need provider credentials and server integration.
+Firebase ID tokens protect comment mutations and the token email is matched to the MongoDB user. Some inherited API routes still need authorization hardening before production. The dashboard's security panel does not enforce OTP/trusted devices. The live-room panel is only a local device preview: no room signaling or peer connection is implemented. Video uploads use local disk and require persistent object storage for hosted use.
+
+See [the deployment guide](../DEPLOYMENT.md) for frontend deployment, host configuration, public-link review, and the demo video outline.
