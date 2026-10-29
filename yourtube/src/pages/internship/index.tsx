@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
+import { useRouter } from "next/router";
 
 type Tab = "overview" | "plans" | "downloads" | "community" | "security" | "calls";
 
@@ -51,6 +52,7 @@ const dayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ko
 
 export default function InternshipFeatures() {
   const { user } = useUser();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [plan, setPlan] = useState("Free");
   const [billingPeriod, setBillingPeriod] = useState("monthly");
@@ -73,6 +75,11 @@ export default function InternshipFeatures() {
   const [streamReady, setStreamReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    const requested = router.query.tab;
+    if (typeof requested === "string" && tabs.some((item) => item.id === requested)) setTab(requested as Tab);
+  }, [router.query.tab]);
 
   useEffect(() => {
     const savedPlan = localStorage.getItem("mytube-plan");
