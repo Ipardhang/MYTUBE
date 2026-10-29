@@ -47,7 +47,7 @@ export const postcomment = async (req, res) => {
 
   try {
     if (parentComment) {
-      const parent = await comment.findOne({ _id: parentComment, videoid, moderationStatus: "visible" });
+      const parent = await comment.findOne({ _id: parentComment, videoid, deleted: { $ne: true }, $or: [{ moderationStatus: "visible" }, { moderationStatus: { $exists: false } }] });
       if (!parent) return res.status(404).json({ message: "Reply target is unavailable." });
     }
     const recentComments = await comment.find({
@@ -74,7 +74,7 @@ export const getallcomment = async (req, res) => {
   const { videoid } = req.params;
   if (!mongoose.Types.ObjectId.isValid(videoid)) return res.status(400).json({ message: "Invalid video." });
   try {
-    const comments = await comment.find({ videoid, moderationStatus: "visible" }).sort({ commentedon: -1 }).lean();
+    const comments = await comment.find({ videoid, deleted: { $ne: true }, $or: [{ moderationStatus: "visible" }, { moderationStatus: { $exists: false } }] }).sort({ commentedon: -1 }).lean();
     const mode = req.query.sort;
     if (mode === "oldest") comments.sort((a, b) => new Date(a.commentedon) - new Date(b.commentedon));
     if (mode === "most-liked" || mode === "relevant") comments.sort((a, b) => (b.likedBy?.length || 0) - (a.likedBy?.length || 0));
