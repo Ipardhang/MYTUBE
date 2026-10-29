@@ -2,7 +2,7 @@ import {
   Clock, Compass, History, Home, PlaySquare, Sparkles, ThumbsUp, User,
 } from "lucide-react";
 import Link from "next/link";
-import React, { useState, type ElementType } from "react";
+import { useState, type ElementType } from "react";
 import { Button } from "./ui/button";
 import Channeldialogue from "./channeldialogue";
 import { useUser } from "@/lib/AuthContext";
