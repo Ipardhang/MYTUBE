@@ -12,8 +12,8 @@ npm install
 Copy `.env.example` to `.env` and fill in your values:
 
 ```env
-PORT=5000
-APP_ORIGINS=http://localhost:3000
+PORT=5001
+APP_ORIGINS=http://localhost:3000,http://localhost:3001
 VIDEO_STREAM_SECRET=<random-long-secret>
 FIREBASE_PROJECT_ID=your-firebase-project-id
 ADMIN_EMAILS=admin@example.com
@@ -28,7 +28,7 @@ Then run:
 npm start
 ```
 
-The API is available at http://localhost:5000. Keep `.env` out of Git.
+The API is available at http://localhost:5001. Keep `.env` out of Git.
 
 ## Comment endpoints
 
