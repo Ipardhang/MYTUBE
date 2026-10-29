@@ -1,5 +1,6 @@
 import comment from "../Modals/comment.js";
 import mongoose from "mongoose";
+import users from "../Modals/Auth.js";
 
 const postWindows = new Map();
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
@@ -10,6 +11,12 @@ const hasRepeatedCharacters = (value) => /(.)\1{7,}/u.test(value);
 const emojiOrPunctuationOnly = (value) => /^[\p{Emoji}\p{P}\s]+$/u.test(value);
 const configuredTerms = () => (process.env.PROFANITY_TERMS || "")
   .split(",").map((term) => term.trim().toLocaleLowerCase()).filter(Boolean);
+
+const accountMatches = async (req, userid) => {
+  if (!req.auth?.email || !mongoose.Types.ObjectId.isValid(userid)) return false;
+  const account = await users.findById(userid).select("email").lean();
+  return Boolean(account?.email && account.email.toLowerCase() === req.auth.email.toLowerCase());
+};
 
 const validateBody = (body) => {
   if (body.length < 3 || body.length > 1000) return "Comments must be between 3 and 1000 characters.";
@@ -27,6 +34,8 @@ export const postcomment = async (req, res) => {
   }
   const validation = validateBody(commentbody);
   if (validation) return res.status(400).json({ message: validation });
+
+  if (!(await accountMatches(req, userid))) return res.status(403).json({ message: "This account cannot post as that user." });
 
   const key = String(userid);
   const now = Date.now();
@@ -85,7 +94,7 @@ export const deletecomment = async (req, res) => {
   try {
     const record = await comment.findById(id);
     if (!record) return res.status(404).json({ message: "Comment unavailable." });
-    if (String(record.userid) !== String(userid)) return res.status(403).json({ message: "You can only delete your own comment." });
+    if (String(record.userid) !== String(userid) || !(await accountMatches(req, userid))) return res.status(403).json({ message: "You can only delete your own comment." });
     record.deleted = true;
     record.commentbody = "[comment deleted]";
     await record.save();
@@ -108,7 +117,7 @@ export const editcomment = async (req, res) => {
   try {
     const record = await comment.findById(id);
     if (!record || record.deleted) return res.status(404).json({ message: "Comment unavailable." });
-    if (String(record.userid) !== String(userid)) return res.status(403).json({ message: "You can only edit your own comment." });
+    if (String(record.userid) !== String(userid) || !(await accountMatches(req, userid))) return res.status(403).json({ message: "You can only edit your own comment." });
     if (Date.now() - new Date(record.commentedon).getTime() > EDIT_WINDOW_MS) {
       return res.status(403).json({ message: "The 15-minute edit window has expired." });
     }
@@ -130,6 +139,7 @@ export const votecomment = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userid) || !["like", "dislike", "clear"].includes(vote)) {
     return res.status(400).json({ message: "Invalid vote." });
   }
+  if (!(await accountMatches(req, userid))) return res.status(403).json({ message: "Sign in to vote." });
   try {
     const record = await comment.findById(id);
     if (!record || record.deleted) return res.status(404).json({ message: "Comment unavailable." });
@@ -152,6 +162,7 @@ export const reportcomment = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userid) || !allowed.includes(reason)) {
     return res.status(400).json({ message: "Choose a valid report reason." });
   }
+  if (!(await accountMatches(req, userid))) return res.status(403).json({ message: "Sign in to report." });
   try {
     const record = await comment.findById(id);
     if (!record || record.deleted) return res.status(404).json({ message: "Comment unavailable." });
