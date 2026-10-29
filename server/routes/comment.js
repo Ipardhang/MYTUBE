@@ -1,4 +1,5 @@
 import express from "express";
+import { verifyFirebaseToken } from "../middleware/firebaseAuth.js";
 import {
   deletecomment,
   editcomment,
@@ -12,11 +13,11 @@ import {
 const routes = express.Router();
 
 routes.get("/:videoid", getallcomment);
-routes.post("/postcomment", postcomment);
-routes.delete("/deletecomment/:id", deletecomment);
-routes.post("/editcomment/:id", editcomment);
-routes.patch("/:id/vote", votecomment);
-routes.post("/:id/report", reportcomment);
+routes.post("/postcomment", verifyFirebaseToken, postcomment);
+routes.delete("/deletecomment/:id", verifyFirebaseToken, deletecomment);
+routes.post("/editcomment/:id", verifyFirebaseToken, editcomment);
+routes.patch("/:id/vote", verifyFirebaseToken, votecomment);
+routes.post("/:id/report", verifyFirebaseToken, reportcomment);
 routes.post("/:id/translate", translatecomment);
 
 export default routes;
