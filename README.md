@@ -20,6 +20,6 @@ The frontend uses port 3000 and the API defaults to port 5000.
 
 ## Before internship submission
 
-This work is not deployed yet. Razorpay and server-side download APIs are implemented but remain inactive until test credentials, MongoDB, and Firebase settings are configured. Receipt emails need a compatible email API. OTP/trusted-device enforcement, a translation service, and multi-user WebRTC signaling/TURN setup still need provider configuration and implementation before those features are production-ready. The dashboard labels these provider-dependent features instead of activating them without verification.
+This work is not deployed yet. Razorpay and server-side download APIs are implemented but remain inactive until test credentials, MongoDB, and Firebase settings are configured. Receipt emails need a compatible email API. OTP/trusted-device enforcement, a translation service, and multi-user WebRTC signaling/TURN setup still need provider configuration and implementation before those features are production-ready. The dashboard labels these provider-dependent features instead of activating them without verification. Video uploads currently use local server disk, so a production host needs persistent object storage such as S3-compatible storage. Do not submit until you have configured providers, deployed both frontend and API, and reviewed the live app and demo recording.
 
 Configure provider secrets only in hosting environment settings. Do not commit API keys, database passwords, or service credentials.
