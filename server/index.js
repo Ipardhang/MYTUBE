@@ -17,7 +17,11 @@ const allowedOrigins = (process.env.APP_ORIGINS || "http://localhost:3000")
   .split(",").map((origin) => origin.trim()).filter(Boolean);
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    const isLocalDevelopmentOrigin = process.env.NODE_ENV !== "production"
+      && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || "");
+    if (!origin || allowedOrigins.includes(origin) || isLocalDevelopmentOrigin) {
+      return callback(null, true);
+    }
     return callback(new Error("Origin not allowed by CORS"));
   },
   credentials: true,
