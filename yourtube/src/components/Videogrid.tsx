@@ -1,23 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Videocard from "./videocard";
 import axiosInstance from "@/lib/axiosinstance";
 
 const Videogrid = () => {
-  const [videos, setvideo] = useState<any>(null);
+  const [videos, setvideo] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
-  useEffect(() => {
-    const fetchvideo = async () => {
-      try {
-        const res = await axiosInstance.get("/video/getall");
-        setvideo(res.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setloading(false);
-      }
-    };
-    fetchvideo();
+
+  const fetchvideo = useCallback(async () => {
+    setloading(true);
+    try {
+      const res = await axiosInstance.get("/video/getall");
+      const records = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.videos)
+          ? res.data.videos
+          : [];
+      setvideo(records);
+    } catch (error) {
+      console.error("Could not load videos:", error);
+      setvideo([]);
+    } finally {
+      setloading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchvideo();
+  }, [fetchvideo]);
 
   // const videos = [
   //   {
@@ -47,13 +56,31 @@ const Videogrid = () => {
   //     createdAt: new Date(Date.now() - 86400000).toISOString(),
   //   },
   // ];
+  if (loading) {
+    return <p className="col-span-full py-12 text-center text-gray-500">Loading videos…</p>;
+  }
+
+  if (videos.length === 0) {
+    return (
+      <section className="col-span-full rounded-xl border border-dashed p-8 text-center">
+        <h2 className="text-lg font-semibold">No videos to show yet</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Upload a video to your channel, or check that the API and database are running.
+        </p>
+        <button
+          type="button"
+          onClick={fetchvideo}
+          className="mt-4 rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          Try again
+        </button>
+      </section>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {loading ? (
-        <>Loading..</>
-      ) : (
-        videos.map((video: any) => <Videocard key={video._id} video={video} />)
-      )}
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {videos.map((video: any) => <Videocard key={video._id} video={video} />)}
     </div>
   );
 };
