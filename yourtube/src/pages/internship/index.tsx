@@ -324,7 +324,7 @@ export default function InternshipFeatures() {
             <div className="rounded-2xl bg-black/15 px-5 py-4 backdrop-blur">
               <div className="text-xs uppercase tracking-wider text-white/70">Current membership</div>
               <div className="mt-1 flex items-center gap-2 text-xl font-semibold"><Crown size={19} /> {plan}</div>
-              <div className="mt-1 text-xs text-white/75">{downloadLimit - dailyDownloads} downloads left today</div>
+              <div className="mt-1 text-xs text-white/75">{downloadsLeft} downloads left today</div>
             </div>
           </div>
         </section>
@@ -386,7 +386,7 @@ export default function InternshipFeatures() {
           <section className="mt-5">
             <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div><h2 className="text-2xl font-bold">Choose your membership</h2><p className={"mt-1 text-sm " + mutedClass}>Plans are shown for comparison. Payment activation requires verified Razorpay test credentials.</p></div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600"><CreditCard size={15} /> Test checkout setup needed</span>
+              <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border px-3 py-2 text-xs"><CreditCard size={15} /><span>Billing</span><select value={billingPeriod} onChange={(event) => setBillingPeriod(event.target.value)} className="bg-transparent font-semibold"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><span className="rounded-full bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600">Razorpay test keys required</span></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {plans.map((item) => (
@@ -399,7 +399,7 @@ export default function InternshipFeatures() {
                 </article>
               ))}
             </div>
-            <div className={cardClass + " mt-5"}><h3 className="font-semibold">Billing details</h3><p className={"mt-1 text-sm " + mutedClass}>Your transaction history and renewal date will appear here after verified payments are enabled.</p></div>
+            <div className={cardClass + " mt-5"}><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold">Billing details</h3><p className={"mt-1 text-sm " + mutedClass}>{billing?.subscription?.expiresAt ? "Access through " + new Date(billing.subscription.expiresAt).toLocaleDateString("en-IN") : "No paid membership is active."}</p><p className={"mt-1 text-xs " + mutedClass}>{billing?.billingHistory?.length || 0} recorded transactions</p></div>{plan !== "Free" && <button onClick={cancelMembership} className="rounded-lg border px-3 py-2 text-sm">Cancel renewal</button>}</div></div>
           </section>
         )}
 
@@ -412,8 +412,8 @@ export default function InternshipFeatures() {
                 <div className="flex justify-between text-sm"><span>Today’s quota</span><span className="font-semibold">{dailyDownloads} / {downloadLimit}</span></div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-300/40"><div className="h-full rounded-full bg-red-500" style={{ width: Math.min(100, dailyDownloads / downloadLimit * 100) + "%" }} /></div>
               </div>
-              <button onClick={startDownload} disabled={dailyDownloads >= downloadLimit} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"><ArrowDownToLine size={17} /> Download sample video</button>
-              <p className={"mt-3 text-xs " + mutedClass}>Demo download history is saved in this browser. Production quotas must be enforced by the server.</p>
+              <label className="mt-5 block text-sm font-medium">Video to download<select value={selectedVideo} onChange={(event) => setSelectedVideo(event.target.value)} className={"mt-2 w-full rounded-xl border px-3 py-3 " + panelClass}><option value="">Choose a video</option>{availableVideos.map((item) => <option key={item._id} value={item._id}>{item.videotitle}</option>)}</select></label><button onClick={() => void startDownload()} disabled={downloadsLeft <= 0 || !selectedVideo} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"><ArrowDownToLine size={17} /> Download selected video</button>
+              <p className={"mt-3 text-xs " + mutedClass}>The server checks membership, video access, daily quota, duplicate requests and download history before sending the file.</p>
             </div>
             <div className={cardClass}>
               <h2 className="text-lg font-semibold">Your downloads</h2>
