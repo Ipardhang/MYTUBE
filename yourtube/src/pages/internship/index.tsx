@@ -218,8 +218,9 @@ export default function InternshipFeatures() {
             setNotice(error?.response?.data?.message || "Payment could not be verified. Your plan was not activated.");
           }
         },
-        modal: { ondismiss: () => setNotice("Checkout closed. No membership was activated.") },
+        modal: { ondismiss: async () => { await axiosInstance.post("/membership/payments/status", { userId: user._id, orderId: order.orderId, status: "cancelled" }).catch(() => {}); setNotice("Checkout closed. No membership was activated."); } },
       });
+      checkout.on("payment.failed", async () => { await axiosInstance.post("/membership/payments/status", { userId: user._id, orderId: order.orderId, status: "failed" }).catch(() => {}); setNotice("Payment failed. No membership was activated."); });
       checkout.open();
     } catch (error: any) {
       setNotice(error?.response?.data?.message || error.message || "Could not start secure checkout.");
