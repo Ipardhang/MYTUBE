@@ -41,6 +41,8 @@ const Comments = ({ videoId }: any) => {
   const [targetLanguage, setTargetLanguage] = useState("hi");
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
+  const [captchaQuestion, setCaptchaQuestion] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const { user } = useUser();
 
   const loadComments = async () => {
@@ -67,19 +69,12 @@ const Comments = ({ videoId }: any) => {
     });
   }, [comments, sort]);
 
-  const recentPostCount = () => {
-    const now = Date.now();
-    const recent = JSON.parse(localStorage.getItem("mytube-comment-times") || "[]").filter((time: number) => now - time < 60_000);
-    return recent.length;
-  };
-
   const checkComment = (text: string) => {
     const value = text.trim();
     if (value.length < 3 || value.length > 1000) return "Comments must be between 3 and 1000 characters.";
     if (/(https?:\/\/|www\.)/i.test(value)) return "Links are not allowed in comments.";
     if (/(.)\1{7,}/u.test(value)) return "Please avoid repeated characters.";
     if (comments.some((item) => !item.deleted && item.commentbody.trim().toLowerCase() === value.toLowerCase())) return "This comment has already been posted.";
-    if (recentPostCount() >= 5) return "Too many posts. Please wait a minute before trying again.";
     return "";
   };
 
@@ -96,6 +91,7 @@ const Comments = ({ videoId }: any) => {
         usercommented: user.name || "Viewer",
         userimage: user.image || "",
         parentComment: parentComment || null,
+        captchaAnswer: captchaAnswer || undefined,
       });
       const created = response.data?.comment;
       if (created) setComments((prev) => [created, ...prev]);
@@ -103,9 +99,18 @@ const Comments = ({ videoId }: any) => {
       localStorage.setItem("mytube-comment-times", JSON.stringify([...times, Date.now()]));
       setNewComment("");
       setReplyText("");
+      setCaptchaQuestion("");
+      setCaptchaAnswer("");
       setReplyingTo(null);
       setNotice("Comment posted.");
     } catch (error: any) {
+      if (error?.response?.data?.captchaRequired) {
+        try {
+          const captcha = await axiosInstance.get("/comment/captcha");
+          setCaptchaQuestion(captcha.data.question);
+          setCaptchaAnswer("");
+        } catch { setNotice("Could not load the comment check."); }
+      }
       setNotice(error?.response?.data?.message || "Comment could not be posted.");
     } finally {
       setIsSubmitting(false);
@@ -227,6 +232,7 @@ const Comments = ({ videoId }: any) => {
         </div>
         {replyingTo === item._id && (
           <div className="mt-3 space-y-2">
+            {captchaQuestion && <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900"><span>Quick check: {captchaQuestion}</span><input aria-label="CAPTCHA answer" inputMode="numeric" value={captchaAnswer} onChange={(event) => setCaptchaAnswer(event.target.value)} className="w-16 rounded border bg-white px-2 py-1 text-center" /></div>}
             <Textarea value={replyText} maxLength={1000} placeholder={"Reply to " + item.usercommented + "…"} onChange={(event) => setReplyText(event.target.value)} />
             <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setReplyingTo(null)}>Cancel</Button><Button onClick={() => void handleSubmit(replyText, item._id)} disabled={isSubmitting || !replyText.trim()}>Reply</Button></div>
           </div>
@@ -246,6 +252,7 @@ const Comments = ({ videoId }: any) => {
       {user && <div className="flex gap-3">
         <Avatar className="h-9 w-9 shrink-0"><AvatarImage src={user.image || ""} /><AvatarFallback>{user.name?.[0] || "U"}</AvatarFallback></Avatar>
         <div className="min-w-0 flex-1 space-y-2">
+          {captchaQuestion && <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900"><span>Quick check: {captchaQuestion}</span><input aria-label="CAPTCHA answer" inputMode="numeric" value={captchaAnswer} onChange={(event) => setCaptchaAnswer(event.target.value)} className="w-16 rounded border bg-white px-2 py-1 text-center" /></div>}
           <Textarea placeholder="Add a comment…" value={newComment} maxLength={1000} onChange={(event) => setNewComment(event.target.value)} className="min-h-20 resize-y" />
           <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-gray-400">{newComment.length}/1000 · Links and repeated characters are filtered</span><div className="flex gap-2"><Button variant="ghost" onClick={() => setNewComment("")} disabled={!newComment}>Cancel</Button><Button onClick={() => void handleSubmit(newComment)} disabled={!newComment.trim() || isSubmitting}>{isSubmitting ? "Posting…" : "Comment"}</Button></div></div>
         </div>
