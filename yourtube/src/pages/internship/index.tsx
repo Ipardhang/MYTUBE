@@ -3,9 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine, BadgeCheck, Camera, Check, ChevronDown, CircleAlert,
-  Clock3, Copy, Crown, CreditCard, Flag, Globe2, Heart, Laptop, LockKeyhole,
-  MessageCircle, Mic, MicOff, Moon, Play, ShieldCheck, Sparkles, Sun,
-  ThumbsDown, ThumbsUp, Users, Video, VideoOff, X,
+  Clock3, Copy, Crown, CreditCard, Flag, Globe2, Laptop, LockKeyhole,
+  MessageCircle, Mic, MicOff, Moon, ShieldCheck, Sparkles, Sun,
+  ThumbsDown, ThumbsUp, Users, Video, VideoOff,
 } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
