@@ -12,7 +12,15 @@ import commentroutes from "./routes/comment.js";
 dotenv.config();
 const app = express();
 import path from "path";
-app.use(cors());
+const allowedOrigins = (process.env.APP_ORIGINS || "http://localhost:3000")
+  .split(",").map((origin) => origin.trim()).filter(Boolean);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Origin not allowed by CORS"));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use("/uploads", express.static(path.join("uploads")));
