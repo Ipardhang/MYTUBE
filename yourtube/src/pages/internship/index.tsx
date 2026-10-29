@@ -252,12 +252,9 @@ export default function InternshipFeatures() {
     if (/https?:\/\//i.test(text)) return setNotice("Links are held for review in this demo.");
     if (/(.)\1{7,}/u.test(text) || /^[\p{Emoji}\p{P}\s]+$/u.test(text)) return setNotice("Please avoid repeated characters or emoji-only comments.");
     if (comments.some((item) => item.text.toLowerCase() === text.toLowerCase())) return setNotice("Duplicate comment detected.");
-    const recent = JSON.parse(localStorage.getItem("mytube-comment-times") || "[]").filter((time: number) => Date.now() - time < 60000);
-    if (recent.length >= 3) return setNotice("Slow down. CAPTCHA verification is required after repeated posts.");
     const next = [{ id: String(Date.now()), name: user?.name || "You", location: "India", avatar: (user?.name || "You").slice(0, 2).toUpperCase(), text, time: Date.now(), likes: 0, replies: [] }, ...comments];
     setComments(next);
     localStorage.setItem("mytube-demo-comments", JSON.stringify(next));
-    localStorage.setItem("mytube-comment-times", JSON.stringify([...recent, Date.now()]));
     setCommentText("");
     setNotice("Comment posted.");
   };
@@ -281,7 +278,7 @@ export default function InternshipFeatures() {
     setComments(next);
     setReportedCount((value) => value + 1);
     localStorage.setItem("mytube-demo-comments", JSON.stringify(next));
-    setNotice("Report sent to the moderation queue.");
+    setNotice("Preview report marked. Watch-page reports are stored for administrator review.");
   };
 
   const startRoom = async () => {
@@ -433,14 +430,14 @@ export default function InternshipFeatures() {
         {tab === "community" && (
           <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
             <div className={cardClass}>
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 className="text-lg font-semibold">Community comments</h2><p className={"mt-1 text-sm " + mutedClass}>Multilingual comments, voting, replies and report review.</p></div><label className="flex items-center gap-2 text-xs"><span className={mutedClass}>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value)} className={"rounded-lg border px-2 py-2 " + panelClass}><option value="relevant">Most relevant</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="most-liked">Most liked</option></select></label></div>
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 className="text-lg font-semibold">Community comments <span className="ml-2 rounded-full bg-slate-500/10 px-2 py-1 text-xs font-normal">Preview</span></h2><p className={"mt-1 text-sm " + mutedClass}>This panel previews moderation controls. Comments on video watch pages are saved through the API.</p></div><label className="flex items-center gap-2 text-xs"><span className={mutedClass}>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value)} className={"rounded-lg border px-2 py-2 " + panelClass}><option value="relevant">Most relevant</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="most-liked">Most liked</option></select></label></div>
               <div className="mt-5 flex gap-2"><textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} maxLength={500} placeholder="Share a thoughtful comment…" className={"min-h-24 flex-1 resize-y rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-red-500 " + panelClass} /><button onClick={submitComment} className="self-end rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Post</button></div>
               <div className={"mt-1 text-right text-xs " + mutedClass}>{commentText.length}/500</div>
               <div className="mt-5 space-y-4">{sortedComments.map((item) => <article key={item.id} className={"rounded-xl p-4 " + softClass}><div className="flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-rose-500 to-orange-400 text-xs font-bold text-white">{item.avatar}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="text-sm font-semibold">{item.name}</span><span className={"text-xs " + mutedClass}>{item.location} · {new Date(item.time).toLocaleString()}</span>{item.edited && <span className="text-xs text-amber-600">Edited</span>}</div><p className="mt-2 text-sm">{item.text}</p><div className="mt-3 flex flex-wrap items-center gap-3 text-xs"><button onClick={() => toggleLike(item.id, 1)} className={"inline-flex items-center gap-1 " + mutedClass}><ThumbsUp size={14} />{item.likes}</button><button onClick={() => toggleLike(item.id, -1)} className={"inline-flex items-center gap-1 " + mutedClass}><ThumbsDown size={14} /></button><button onClick={() => addReply(item.id)} className="font-medium text-red-500">Reply</button><button onClick={() => report(item.id)} disabled={item.reported} className="inline-flex items-center gap-1 text-slate-500 disabled:text-emerald-600"><Flag size={13} />{item.reported ? "Reported" : "Report"}</button><button onClick={() => setNotice("Translation provider is not configured for this demo.")} className="inline-flex items-center gap-1 text-slate-500"><Globe2 size={13} />Translate to {targetLanguage}</button></div>{item.replies.map((reply, index) => <div key={index} className={"mt-3 rounded-lg border-l-2 border-red-400 pl-3 text-sm " + mutedClass}>{reply}</div>)}</div></div></article>)}</div>
             </div>
             <aside className="space-y-5">
               <div className={cardClass}><h3 className="font-semibold">Language preference</h3><p className={"mt-1 text-sm " + mutedClass}>Choose the language for translated comment previews.</p><div className="relative mt-4"><select value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} className={"w-full appearance-none rounded-xl border px-3 py-3 text-sm " + panelClass}><option>Hindi</option><option>English</option><option>Bengali</option><option>Tamil</option><option>Spanish</option></select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-4" /></div></div>
-              <div className={cardClass}><h3 className="font-semibold">Safety and moderation</h3><ul className={"mt-3 space-y-3 text-sm " + mutedClass}><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Duplicate and rapid-post checks</li><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Link and repeated-character checks</li><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Reports enter a review queue</li></ul><p className="mt-3 text-xs text-amber-600">Server-side filtering, multilingual profanity lists and CAPTCHA provider still need backend configuration.</p></div>
+              <div className={cardClass}><h3 className="font-semibold">Safety and moderation</h3><ul className={"mt-3 space-y-3 text-sm " + mutedClass}><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Duplicate and rapid-post checks</li><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Link and repeated-character checks</li><li className="flex gap-2"><Check size={15} className="mt-0.5 text-emerald-500" />Reports enter a review queue</li></ul><p className="mt-3 text-xs text-amber-600">The watch-page API enforces rate limits, an arithmetic CAPTCHA, reports and edit history; configure profanity terms and a translation service in the server environment.</p></div>
             </aside>
           </section>
         )}
