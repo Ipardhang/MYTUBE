@@ -8,6 +8,7 @@ import {
   ThumbsDown, ThumbsUp, Users, Video, VideoOff, X,
 } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
+import axiosInstance from "@/lib/axiosinstance";
 
 type Tab = "overview" | "plans" | "downloads" | "community" | "security" | "calls";
 
@@ -52,6 +53,11 @@ export default function InternshipFeatures() {
   const { user } = useUser();
   const [tab, setTab] = useState<Tab>("overview");
   const [plan, setPlan] = useState("Free");
+  const [billingPeriod, setBillingPeriod] = useState("monthly");
+  const [billing, setBilling] = useState<any>(null);
+  const [availableVideos, setAvailableVideos] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState("");
+  const [remainingToday, setRemainingToday] = useState<number | null>(null);
   const [downloads, setDownloads] = useState<any[]>([]);
   const [theme, setTheme] = useState("dark");
   const [comments, setComments] = useState<CommentItem[]>(seedComments);
@@ -85,11 +91,36 @@ export default function InternshipFeatures() {
   }, []);
 
   useEffect(() => {
+    const userId = user?._id;
+    if (!userId) return;
+    axiosInstance.get("/membership/" + userId).then((response) => {
+      setBilling(response.data);
+      setPlan(response.data.plan || "Free");
+    }).catch(() => {});
+    axiosInstance.get("/membership/downloads/" + userId).then((response) => {
+      const records = (response.data.records || []).map((item: any) => ({
+        id: item._id, videoId: item.videoid, title: item.videotitle,
+        date: new Date(item.downloadedAt).toLocaleString("en-IN"), day: dayKey(),
+        timestamp: new Date(item.downloadedAt).getTime(), size: item.filesize,
+        status: item.status, plan: item.plan,
+      }));
+      setDownloads(records);
+      setRemainingToday(response.data.remaining);
+    }).catch(() => {});
+    axiosInstance.get("/video/getall").then((response) => {
+      const list = Array.isArray(response.data) ? response.data : [];
+      setAvailableVideos(list);
+      setSelectedVideo((previous) => previous || list[0]?._id || "");
+    }).catch(() => {});
+  }, [user?._id]);
+
+  useEffect(() => {
     if (videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
   }, [streamReady]);
 
   const dailyDownloads = downloads.filter((item) => item.day === dayKey()).length;
   const downloadLimit = plans.find((item) => item.name === plan)?.daily || 1;
+  const downloadsLeft = remainingToday === null ? Math.max(0, downloadLimit - dailyDownloads) : remainingToday;
   const sortedComments = useMemo(() => [...comments].sort((a, b) => {
     if (sort === "newest") return b.time - a.time;
     if (sort === "oldest") return a.time - b.time;
@@ -108,32 +139,102 @@ export default function InternshipFeatures() {
     setNotice("Theme preference saved on this device.");
   };
 
-  const startDownload = () => {
-    if (dailyDownloads >= downloadLimit) {
-      setNotice("Daily download limit reached for the " + plan + " plan.");
-      return;
+  const startDownload = async () => {
+    if (!user?._id) { setNotice("Sign in to use plan-authorized downloads."); return; }
+    if (!selectedVideo) { setNotice("Upload or choose a video first."); return; }
+    try {
+      const response = await axiosInstance.post(
+        "/membership/downloads/" + user._id + "/" + selectedVideo,
+        {},
+        { responseType: "blob" }
+      );
+      const url = URL.createObjectURL(response.data);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "mytube-video.mp4";
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+      const result = await axiosInstance.get("/membership/downloads/" + user._id);
+      const records = (result.data.records || []).map((item: any) => ({
+        id: item._id, videoId: item.videoid, title: item.videotitle,
+        date: new Date(item.downloadedAt).toLocaleString("en-IN"), day: dayKey(),
+        timestamp: new Date(item.downloadedAt).getTime(), size: item.filesize,
+        status: item.status, plan: item.plan,
+      }));
+      setDownloads(records);
+      setRemainingToday(result.data.remaining);
+      setNotice("Download authorized and recorded.");
+    } catch (error: any) {
+      setNotice(error?.response?.data?.message || "Download could not be authorized.");
     }
-    if (downloads.some((item) => item.videoId === "sample-video" && Date.now() - item.timestamp < 12 * 60 * 60 * 1000)) {
-      setNotice("This video was already downloaded in the last 12 hours.");
-      return;
-    }
-    const next = [{
-      id: String(Date.now()), videoId: "sample-video", title: "YourTube sample video",
-      date: new Date().toLocaleString("en-IN"), day: dayKey(), timestamp: Date.now(),
-      size: "907 KB", status: "Ready", plan,
-    }, ...downloads];
-    setDownloads(next);
-    localStorage.setItem("mytube-downloads", JSON.stringify(next));
-    const anchor = document.createElement("a");
-    anchor.href = "/video/vdo.mp4";
-    anchor.download = "mytube-sample.mp4";
-    anchor.click();
-    setNotice("Download started. Your download history has been updated.");
   };
 
-  const choosePlan = (selected: string) => {
-    setNotice("Razorpay test checkout needs server test keys. No subscription was activated.");
-    localStorage.setItem("mytube-pending-plan", selected);
+  const choosePlan = async (selected: string) => {
+    if (selected === "Free") { setNotice("Free is the default plan."); return; }
+    if (!user?._id) { setNotice("Sign in before purchasing a membership."); return; }
+    try {
+      const orderResponse = await axiosInstance.post("/membership/orders", {
+        userId: user._id, plan: selected, period: billingPeriod,
+      });
+      const existing = document.querySelector("script[data-razorpay]") as HTMLScriptElement | null;
+      if (!existing) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.dataset.razorpay = "true";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Razorpay checkout could not load."));
+          document.body.appendChild(script);
+        });
+      }
+      const RazorpayCheckout = (window as any).Razorpay;
+      if (!RazorpayCheckout) throw new Error("Razorpay checkout is unavailable.");
+      const order = orderResponse.data;
+      const checkout = new RazorpayCheckout({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "MyTube",
+        description: selected + " membership · " + billingPeriod,
+        order_id: order.orderId,
+        prefill: { name: user.name || "", email: user.email || "" },
+        notes: { invoiceNumber: order.invoiceNumber },
+        theme: { color: "#e11d48" },
+        handler: async (payment: any) => {
+          try {
+            const verified = await axiosInstance.post("/membership/verify", {
+              userId: user._id,
+              orderId: payment.razorpay_order_id,
+              paymentId: payment.razorpay_payment_id,
+              signature: payment.razorpay_signature,
+            });
+            if (verified.data.verified) {
+              setPlan(verified.data.subscription.plan);
+              localStorage.setItem("mytube-plan", verified.data.subscription.plan);
+              setBilling(verified.data);
+              setNotice("Payment verified. " + selected + " membership is active.");
+            }
+          } catch (error: any) {
+            setNotice(error?.response?.data?.message || "Payment could not be verified. Your plan was not activated.");
+          }
+        },
+        modal: { ondismiss: () => setNotice("Checkout closed. No membership was activated.") },
+      });
+      checkout.open();
+    } catch (error: any) {
+      setNotice(error?.response?.data?.message || error.message || "Could not start secure checkout.");
+    }
+  };
+
+  const cancelMembership = async () => {
+    if (!user?._id) return;
+    try {
+      const response = await axiosInstance.post("/membership/" + user._id + "/cancel");
+      setBilling((previous: any) => ({ ...previous, subscription: response.data.subscription }));
+      setNotice("Renewal stopped. Access remains until the current expiry date.");
+    } catch (error: any) {
+      setNotice(error?.response?.data?.message || "Could not cancel renewal.");
+    }
   };
 
   const submitComment = () => {
