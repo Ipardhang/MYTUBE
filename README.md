@@ -16,7 +16,7 @@ MyTube continues the YouTube training project supplied at https://github.com/Bit
 1. Follow [API setup](server/README.md), start MongoDB, and run the Express server.
 2. Follow [frontend setup](yourtube/README.md) and run the Next.js app.
 
-The frontend uses port 3000 and the API defaults to port 5000.
+The frontend uses port 3000 and the API defaults to port 5001. On macOS, the API uses port 5001 to avoid the system AirTunes service on port 5000.
 
 ## Deployment and submission
 
