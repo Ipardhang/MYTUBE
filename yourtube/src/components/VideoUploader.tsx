@@ -12,6 +12,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [isPremium, setIsPremium] = useState(false);
+  const [minimumPlan, setMinimumPlan] = useState("Bronze");
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +60,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     formdata.append("videotitle", videoTitle);
     formdata.append("videochanel", channelName);
     formdata.append("uploader", channelId);
+    formdata.append("isPremium", String(isPremium));
+    formdata.append("minimumPlan", isPremium ? minimumPlan : "Free");
     console.log(formdata)
     try {
       setIsUploading(true);
@@ -146,6 +150,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                   className="mt-1"
                 />
               </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isPremium} onChange={(event) => setIsPremium(event.target.checked)} disabled={isUploading || uploadComplete} />
+                Make this video available to paid members
+              </label>
+              {isPremium && <label className="block text-sm">Minimum plan
+                <select value={minimumPlan} onChange={(event) => setMinimumPlan(event.target.value)} disabled={isUploading || uploadComplete} className="ml-3 rounded border px-2 py-1">
+                  <option value="Bronze">Bronze</option><option value="Silver">Silver</option><option value="Gold">Gold</option>
+                </select>
+              </label>}
             </div>
 
             {isUploading && (
