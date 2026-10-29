@@ -14,7 +14,7 @@ npm install
 Copy `.env.example` to `.env.local` and fill in your backend URL:
 
 ```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
 ```
 
 Then start Next.js:
