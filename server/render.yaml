@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: mytube-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_URL
+        sync: false
+      - key: APP_ORIGINS
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        value: yourtube-8cda9
+      - key: VIDEO_STREAM_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
