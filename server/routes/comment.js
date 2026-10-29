@@ -4,7 +4,9 @@ import {
   createCommentCaptcha,
   deletecomment,
   editcomment,
+  getReportedComments,
   getallcomment,
+  moderateComment,
   postcomment,
   reportcomment,
   translatecomment,
@@ -14,6 +16,8 @@ import {
 const routes = express.Router();
 
 routes.get("/captcha", verifyFirebaseToken, createCommentCaptcha);
+routes.get("/moderation/reports", verifyFirebaseToken, getReportedComments);
+routes.patch("/:id/moderation", verifyFirebaseToken, moderateComment);
 routes.get("/:videoid", getallcomment);
 routes.post("/postcomment", verifyFirebaseToken, postcomment);
 routes.delete("/deletecomment/:id", verifyFirebaseToken, deletecomment);
