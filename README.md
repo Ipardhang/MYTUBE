@@ -6,7 +6,9 @@ MyTube continues the YouTube training project supplied at https://github.com/Bit
 
 - Responsive MyTube Studio dashboard with membership, downloads, community, security, and live-room sections
 - Custom HTML5 player controls, keyboard shortcuts, playback speed, PiP/fullscreen, resume position, and completion tracking
-- Threaded comments with edit history, a 15-minute edit window, soft deletion, votes, reports, sorting, moderation checks, and a configurable translation endpoint
+- Threaded comments with Firebase-authenticated writes, edit history, a 15-minute edit window, soft deletion, votes, reports, an administrator queue, sorting, spam checks, a quick CAPTCHA and a configurable translation endpoint
+- Razorpay order and signature verification APIs, plan expiry, cancellation and billing records; paid access is activated only after gateway verification
+- Server-authorized video playback and daily download quotas with an audit trail
 - Setup and deployment notes for the frontend and API
 
 ## Run locally
@@ -18,6 +20,6 @@ The frontend uses port 3000 and the API defaults to port 5000.
 
 ## Before internship submission
 
-This work is not deployed yet. The membership screen is a comparison/dashboard view; Razorpay order creation, verification and billing emails still need to be connected. Server-side download authorization and quota records, Firebase token verification, OTP/trusted-device flows, and multi-user WebRTC signaling/TURN setup also remain before those features can be treated as production-ready. The dashboard labels these provider-dependent features instead of activating them without verification.
+This work is not deployed yet. Razorpay and server-side download APIs are implemented but remain inactive until test credentials, MongoDB, and Firebase settings are configured. Receipt emails need a compatible email API. OTP/trusted-device enforcement, a translation service, and multi-user WebRTC signaling/TURN setup still need provider configuration and implementation before those features are production-ready. The dashboard labels these provider-dependent features instead of activating them without verification.
 
 Configure provider secrets only in hosting environment settings. Do not commit API keys, database passwords, or service credentials.
