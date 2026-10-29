@@ -1,0 +1,21 @@
+# Dependencies and build output
+node_modules/
+yourtube/.next/
+yourtube/out/
+yourtube/build/
+*.tsbuildinfo
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+server/.env
+yourtube/.env.local
+!server/.env.example
+!yourtube/.env.example
+
+# Uploaded videos (the training sample already in Git stays tracked)
+server/uploads/*
+
+# Local files
+.DS_Store
