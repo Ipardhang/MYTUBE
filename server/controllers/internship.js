@@ -83,6 +83,11 @@ export const createOrder = async (req, res) => {
   const amount = plans[plan].monthly * multipliers[period] * 100;
   const receipt = makeInvoiceNumber();
   try {
+    const pending = await Payment.findOne({ userid: userId, status: "created" }).sort({ createdAt: -1 });
+    if (pending) {
+      if (pending.plan !== plan || pending.period !== period) return res.status(409).json({ message: "Complete or close your pending payment before choosing another plan." });
+      return res.status(200).json({ keyId, orderId: pending.orderId, amount: pending.amount, currency: pending.currency, invoiceNumber: pending.invoiceNumber });
+    }
     const payment = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
@@ -102,6 +107,24 @@ export const createOrder = async (req, res) => {
   } catch (error) {
     console.error("Razorpay order error:", error);
     return res.status(502).json({ message: "Payment service is unavailable." });
+  }
+};
+
+export const updatePaymentStatus = async (req, res) => {
+  const { userId, orderId, status } = req.body || {};
+  if (!(await matchesAccount(req, userId))) return res.status(403).json({ message: "Account access denied." });
+  if (!orderId || !["failed", "cancelled"].includes(status)) return res.status(400).json({ message: "Invalid payment status." });
+  try {
+    const record = await Payment.findOneAndUpdate(
+      { userid: userId, orderId, status: "created" },
+      { $set: { status } },
+      { new: true }
+    );
+    if (!record) return res.status(404).json({ message: "Pending payment order not found." });
+    return res.status(200).json({ status: record.status });
+  } catch (error) {
+    console.error("Payment status error:", error);
+    return res.status(500).json({ message: "Could not update payment status." });
   }
 };
 
