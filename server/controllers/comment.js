@@ -196,6 +196,38 @@ export const reportcomment = async (req, res) => {
   }
 };
 
+export const getReportedComments = async (req, res) => {
+  const admins = (process.env.ADMIN_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
+  if (!req.auth?.email || !admins.includes(req.auth.email.toLowerCase())) return res.status(403).json({ message: "Administrator access is required." });
+  try {
+    const records = await comment.find({ "reports.0": { $exists: true } })
+      .sort({ updatedAt: -1 }).populate("userid", "name image").lean();
+    return res.status(200).json(records);
+  } catch (error) {
+    console.error("Moderation queue error:", error);
+    return res.status(500).json({ message: "Could not load the moderation queue." });
+  }
+};
+
+export const moderateComment = async (req, res) => {
+  const admins = (process.env.ADMIN_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
+  if (!req.auth?.email || !admins.includes(req.auth.email.toLowerCase())) return res.status(403).json({ message: "Administrator access is required." });
+  const { id } = req.params;
+  const { status, note } = req.body || {};
+  if (!mongoose.Types.ObjectId.isValid(id) || !["visible", "held"].includes(status)) return res.status(400).json({ message: "Invalid moderation action." });
+  try {
+    const record = await comment.findById(id);
+    if (!record) return res.status(404).json({ message: "Comment unavailable." });
+    record.moderationStatus = status;
+    record.moderationHistory.push({ moderatorEmail: req.auth.email, action: status, note: cleanText(note).slice(0, 500) });
+    await record.save();
+    return res.status(200).json({ id, status, moderationHistory: record.moderationHistory });
+  } catch (error) {
+    console.error("Comment moderation error:", error);
+    return res.status(500).json({ message: "Could not update moderation status." });
+  }
+};
+
 export const translatecomment = async (req, res) => {
   const { id } = req.params;
   const target = String(req.body?.target || "").slice(0, 10);
