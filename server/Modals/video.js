@@ -11,6 +11,8 @@ const videochema = mongoose.Schema(
     Like: { type: Number, default: 0 },
     views: { type: Number, default: 0 },
     uploader: { type: String },
+    isPremium: { type: Boolean, default: false },
+    minimumPlan: { type: String, enum: ["Free", "Bronze", "Silver", "Gold"], default: "Free" },
   },
   {
     timestamps: true,
