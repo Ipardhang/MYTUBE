@@ -1,4 +1,5 @@
 import axios from "axios";
+import { auth } from "./firebase";
 
 const baseURL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
@@ -6,5 +7,13 @@ const baseURL =
   "http://localhost:5000";
 
 const axiosInstance = axios.create({ baseURL });
+
+axiosInstance.interceptors.request.use(async (config) => {
+  const activeUser = auth.currentUser;
+  if (activeUser) {
+    config.headers.Authorization = "Bearer " + (await activeUser.getIdToken());
+  }
+  return config;
+});
 
 export default axiosInstance;
