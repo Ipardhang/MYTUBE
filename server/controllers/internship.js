@@ -245,7 +245,7 @@ export const downloadVideo = async (req, res) => {
     const file = await videos.findById(videoId).lean();
     if (!file) return res.status(404).json({ message: "Video unavailable." });
     const { plan } = await getActivePlan(userId);
-    const requiredPlan = file.minimumPlan || (file.isPremium ? "Bronze" : "Free");
+    const requiredPlan = file.minimumPlan && file.minimumPlan !== "Free" ? file.minimumPlan : (file.isPremium ? "Bronze" : "Free");
     if ((planRank[plan] ?? 0) < (planRank[requiredPlan] ?? 99)) return res.status(403).json({ message: "This video requires a " + requiredPlan + " plan." });
 
     const uploadRoot = path.resolve(process.cwd(), "uploads");
