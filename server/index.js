@@ -13,7 +13,6 @@ import internshiproutes from "./routes/internship.js";
 dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
-import path from "path";
 const allowedOrigins = (process.env.APP_ORIGINS || "http://localhost:3000")
   .split(",").map((origin) => origin.trim()).filter(Boolean);
 app.use(cors({
@@ -25,7 +24,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
-app.use("/uploads", express.static(path.join("uploads")));
 app.get("/", (req, res) => {
   res.send("You tube backend is working");
 });
