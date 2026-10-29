@@ -38,6 +38,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const resetForm = () => {
     setVideoFile(null);
     setVideoTitle("");
+    setIsPremium(false);
+    setMinimumPlan("Bronze");
     setIsUploading(false);
     setUploadProgress(0);
     setUploadComplete(false);
