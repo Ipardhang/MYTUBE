@@ -11,6 +11,7 @@ import historyrroutes from "./routes/history.js";
 import commentroutes from "./routes/comment.js";
 import internshiproutes from "./routes/internship.js";
 import { randomBytes } from "node:crypto";
+import { ensureDemoVideo } from "./utils/ensureDemoVideo.js";
 dotenv.config();
 
 // A local-only signing key keeps the demo player usable without extra setup.
@@ -61,8 +62,16 @@ app.listen(PORT, () => {
 const DBURL = process.env.DB_URL;
 mongoose
   .connect(DBURL)
-  .then(() => {
+  .then(async () => {
     console.log("Mongodb connected");
+    if (process.env.AUTO_SEED_DEMO !== "false") {
+      try {
+        const seeded = await ensureDemoVideo();
+        if (seeded) console.log("Added the bundled sample video to the empty database.");
+      } catch (error) {
+        console.error("Could not seed the bundled sample video:", error.message);
+      }
+    }
   })
   .catch((error) => {
     console.log(error);

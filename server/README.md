@@ -28,7 +28,7 @@ Then run:
 npm start
 ```
 
-The API is available at http://localhost:5001. In local development, the server creates a temporary random video signing key if `VIDEO_STREAM_SECRET` is omitted. Set a stable secret in hosted environments. Keep `.env` out of Git.
+The API is available at http://localhost:5001. If MongoDB has no videos, the server automatically adds the bundled sample clip; set `AUTO_SEED_DEMO=false` to disable this. In local development, the server creates a temporary random video signing key if `VIDEO_STREAM_SECRET` is omitted. Set a stable secret in hosted environments. Keep `.env` out of Git.
 
 To add the bundled sample clip to your database so the feed and player have a video to show, run this once from `server/`:
 
