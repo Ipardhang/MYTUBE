@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyFirebaseToken } from "../middleware/firebaseAuth.js";
 import {
+  createCommentCaptcha,
   deletecomment,
   editcomment,
   getallcomment,
@@ -12,6 +13,7 @@ import {
 
 const routes = express.Router();
 
+routes.get("/captcha", verifyFirebaseToken, createCommentCaptcha);
 routes.get("/:videoid", getallcomment);
 routes.post("/postcomment", verifyFirebaseToken, postcomment);
 routes.delete("/deletecomment/:id", verifyFirebaseToken, deletecomment);
