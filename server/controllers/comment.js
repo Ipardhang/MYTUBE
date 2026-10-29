@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import users from "../Modals/Auth.js";
 
 const postWindows = new Map();
+const captchaChallenges = new Map();
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 const cleanText = (value) => String(value || "").replace(/[<>]/g, "").trim();
@@ -26,6 +27,15 @@ const validateBody = (body) => {
   return null;
 };
 
+export const createCommentCaptcha = async (req, res) => {
+  const key = req.auth?.uid;
+  if (!key) return res.status(401).json({ message: "Sign in is required." });
+  const left = Math.floor(Math.random() * 8) + 2;
+  const right = Math.floor(Math.random() * 8) + 2;
+  captchaChallenges.set(key, { answer: left + right, expiresAt: Date.now() + 2 * 60_000 });
+  return res.status(200).json({ question: left + " + " + right + " = ?" });
+};
+
 export const postcomment = async (req, res) => {
   const { videoid, userid, usercommented, userimage, parentComment } = req.body;
   const commentbody = cleanText(req.body.commentbody);
@@ -40,7 +50,15 @@ export const postcomment = async (req, res) => {
   const key = String(userid);
   const now = Date.now();
   const recent = (postWindows.get(key) || []).filter((time) => now - time < 60_000);
-  if (recent.length >= 5) return res.status(429).json({ message: "Too many comments. Try again in a minute.", captchaRequired: true });
+  if (recent.length >= 3) {
+    const challenge = captchaChallenges.get(req.auth?.uid);
+    const answer = Number(req.body.captchaAnswer);
+    if (!challenge || challenge.expiresAt < now || answer !== challenge.answer) {
+      return res.status(429).json({ message: "Verify the quick check before posting again.", captchaRequired: true });
+    }
+    captchaChallenges.delete(req.auth.uid);
+  }
+  if (recent.length >= 8) return res.status(429).json({ message: "Comment rate limit reached. Try again in a minute.", captchaRequired: true });
   if (parentComment && !mongoose.Types.ObjectId.isValid(parentComment)) {
     return res.status(400).json({ message: "Reply target is invalid." });
   }
