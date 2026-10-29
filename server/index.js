@@ -9,8 +9,10 @@ import likeroutes from "./routes/like.js";
 import watchlaterroutes from "./routes/watchlater.js";
 import historyrroutes from "./routes/history.js";
 import commentroutes from "./routes/comment.js";
+import internshiproutes from "./routes/internship.js";
 dotenv.config();
 const app = express();
+app.set("trust proxy", 1);
 import path from "path";
 const allowedOrigins = (process.env.APP_ORIGINS || "http://localhost:3000")
   .split(",").map((origin) => origin.trim()).filter(Boolean);
@@ -34,6 +36,7 @@ app.use("/like", likeroutes);
 app.use("/watch", watchlaterroutes);
 app.use("/history", historyrroutes);
 app.use("/comment", commentroutes);
+app.use("/membership", internshiproutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
