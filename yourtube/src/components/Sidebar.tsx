@@ -25,7 +25,7 @@ const Sidebar = () => {
       <nav className="space-y-1">
         <SidebarItem href="/" label="Home" icon={Home} />
         <SidebarItem href="/explore" label="Explore" icon={Compass} />
-        <SidebarItem href="/internship?tab=plans" label="Subscriptions" icon={PlaySquare} />
+        <SidebarItem href="/subscriptions" label="Subscriptions" icon={PlaySquare} />
         <SidebarItem href="/internship" label="MyTube Studio" icon={Sparkles} />
         {user && (
           <div className="mt-2 space-y-1 border-t pt-2">

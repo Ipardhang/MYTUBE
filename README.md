@@ -9,14 +9,16 @@ MyTube continues the YouTube training project supplied at https://github.com/Bit
 - Threaded comments with Firebase-authenticated writes, edit history, a 15-minute edit window, soft deletion, votes, reports, an administrator queue, sorting, spam checks, an arithmetic challenge, and a configurable translation endpoint
 - Razorpay order and signature verification APIs, plan expiry, cancellation, and billing records; paid access is activated only after gateway verification
 - Server-authorized video playback and daily download quotas with an audit trail
-- An idempotent seed command for the included sample clip, so a fresh MongoDB database has a video to display\n- Deployment notes and a Render blueprint for the API; deploy the Next.js app from `yourtube/` on Vercel
+- Deployment notes and a Render blueprint for the API; deploy the Next.js app from `yourtube/` on Vercel
+- API-backed video search, category filtering, channel profiles, subscriptions, and channel-specific uploads with descriptions and categories
+- Persistent like/dislike reactions, saved videos, watch history, and subscription lists tied to the signed-in Firebase account
 
 ## Run locally
 
-1. Follow [API setup](server/README.md), configure MongoDB and `VIDEO_STREAM_SECRET`, run `npm run seed:demo` once, then start the Express server.
+1. Follow [API setup](server/README.md), start MongoDB, and run the Express server.
 2. Follow [frontend setup](yourtube/README.md) and run the Next.js app.
 
-The frontend uses port 3000 and the API defaults to port 5001. On macOS, the API uses port 5001 to avoid the system AirTunes service on port 5000.
+The frontend uses port 3000 and the API defaults to port 5001 (port 5000 is used by AirPlay Receiver on some Macs). In development, the API creates a temporary random video-token secret if `VIDEO_STREAM_SECRET` is missing. Production deployments must set a stable secret.
 
 ## Deployment and submission
 

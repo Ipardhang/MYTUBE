@@ -12,16 +12,19 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Education");
   const [isPremium, setIsPremium] = useState(false);
   const [minimumPlan, setMinimumPlan] = useState("Bronze");
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      if (!file.type.startsWith("video/")) {
-        toast.error("Please upload a valid video file.");
+      if (file.type !== "video/mp4" || !file.name.toLowerCase().endsWith(".mp4")) {
+        toast.error("Upload an MP4 video file.");
         return;
       }
       if (file.size > 100 * 1024 * 1024) {
@@ -38,6 +41,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const resetForm = () => {
     setVideoFile(null);
     setVideoTitle("");
+    setDescription("");
+    setCategory("Education");
     setIsPremium(false);
     setMinimumPlan("Bronze");
     setIsUploading(false);
@@ -49,8 +54,9 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   };
   const cancelUpload = () => {
     if (isUploading) {
-      toast.error("Your video upload has been cancelled");
-    }
+      abortRef.current?.abort();
+      toast.info("Cancelling upload…");
+    } else resetForm();
   };
   const handleUpload = async () => {
     if (!videoFile || !videoTitle.trim()) {
@@ -60,15 +66,18 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     const formdata = new FormData();
     formdata.append("file", videoFile);
     formdata.append("videotitle", videoTitle);
+    formdata.append("description", description);
+    formdata.append("category", category);
     formdata.append("videochanel", channelName);
     formdata.append("uploader", channelId);
     formdata.append("isPremium", String(isPremium));
     formdata.append("minimumPlan", isPremium ? minimumPlan : "Free");
-    console.log(formdata)
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      const res = await axiosInstance.post("/video/upload", formdata, {
+      abortRef.current = new AbortController();
+      await axiosInstance.post("/video/upload", formdata, {
+         signal: abortRef.current.signal,
          headers: {
     "Content-Type": "multipart/form-data", // ✅ MUST for FormData
   },
@@ -79,12 +88,14 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           setUploadProgress(progress);
         },
       });
-      toast.success("Upload successfully");
-      resetForm();
+      setUploadComplete(true);
+      toast.success("Video uploaded successfully.");
     } catch (error) {
       console.error("Error uploading video:", error);
-      toast.error("There was an error uploading your video. Please try again.");
+      if (abortRef.current?.signal.aborted) toast.info("Upload cancelled.");
+      else toast.error("There was an error uploading your video. Please try again.");
     } finally {
+      abortRef.current = null;
       setIsUploading(false);
     }
   };
@@ -106,13 +117,13 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               or click to select files
             </p>
             <p className="text-xs text-gray-400 mt-4">
-              MP4, WebM, MOV or AVI • Up to 100MB
+              MP4 video • Up to 100MB
             </p>
             <input
               type="file"
               ref={fileInputRef}
               className="hidden"
-              accept="video/*"
+              accept="video/mp4,.mp4"
               onChange={handlefilechange}
             />
           </div>
@@ -151,6 +162,16 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                   disabled={isUploading || uploadComplete}
                   className="mt-1"
                 />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <textarea id="description" value={description} maxLength={5000} onChange={(event) => setDescription(event.target.value)} placeholder="Tell viewers what this video is about" disabled={isUploading || uploadComplete} className="mt-1 min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <select id="category" value={category} onChange={(event) => setCategory(event.target.value)} disabled={isUploading || uploadComplete} className="mt-1 block rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+                  {["Education", "Music", "Gaming", "Movies", "News", "Sports", "Technology", "Comedy", "Science", "Travel", "Food", "Fashion", "Other"].map((item) => <option key={item}>{item}</option>)}
+                </select>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={isPremium} onChange={(event) => setIsPremium(event.target.checked)} disabled={isUploading || uploadComplete} />

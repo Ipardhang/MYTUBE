@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Videocard from "./videocard";
 import axiosInstance from "@/lib/axiosinstance";
+import { useRouter } from "next/router";
 
 const Videogrid = () => {
   const [videos, setvideo] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
+  const router = useRouter();
+  const category = typeof router.query.category === "string" ? router.query.category : "All";
 
   const fetchvideo = useCallback(async () => {
     setloading(true);
@@ -78,9 +81,17 @@ const Videogrid = () => {
     );
   }
 
+  const visibleVideos = category === "All" ? videos : videos.filter((video: any) =>
+    String(video.category || "Other").toLowerCase() === category.toLowerCase()
+  );
+
+  if (visibleVideos.length === 0) {
+    return <p className="col-span-full py-12 text-center text-gray-500">No videos in {category}. Choose another category or upload a video.</p>;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {videos.map((video: any) => <Videocard key={video._id} video={video} />)}
+      {visibleVideos.map((video: any) => <Videocard key={video._id} video={video} />)}
     </div>
   );
 };

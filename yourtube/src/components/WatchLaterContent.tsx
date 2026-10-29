@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { MoreVertical, X, Clock, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,17 +13,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import axiosInstance from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
+import { useRouter } from "next/router";
 
 export default function WatchLaterContent() {
   const [watchLater, setWatchLater] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
       loadWatchLater();
-    }
-  }, [user]);
+    } else { setWatchLater([]); setLoading(false); }
+  }, [user?._id]);
 
   const loadWatchLater = async () => {
     if (!user) return;
@@ -45,7 +46,7 @@ export default function WatchLaterContent() {
   }
   const handleRemoveFromWatchLater = async (watchLaterId: string) => {
     try {
-      console.log("Removing from history:", watchLaterId);
+      await axiosInstance.delete(`/watch/entry/${watchLaterId}`);
       setWatchLater(watchLater.filter((item) => item._id !== watchLaterId));
     } catch (error) {
       console.error("Error removing from history:", error);
@@ -80,14 +81,14 @@ export default function WatchLaterContent() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600">{watchLater.length} videos</p>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => { const firstVideo = watchLater.find((item) => item.videoid)?._id; if (firstVideo) void router.push(`/watch/${watchLater.find((item) => item.videoid).videoid._id}`); }}>
           <Play className="w-4 h-4" />
           Play all
         </Button>
       </div>
 
       <div className="space-y-4">
-        {watchLater.map((item) => (
+        {watchLater.filter((item) => item.videoid).map((item) => (
           <div key={item._id} className="flex gap-4 group">
             <Link href={`/watch/${item.videoid._id}`} className="flex-shrink-0">
               <div className="relative w-40 aspect-video bg-gray-100 rounded overflow-hidden">

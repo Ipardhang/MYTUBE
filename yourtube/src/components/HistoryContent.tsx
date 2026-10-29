@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { MoreVertical, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,8 @@ export default function HistoryContent() {
     if (user) {
       loadHistory();
     } else {
-      setLoading(true);
+      setHistory([]);
+      setLoading(false);
     }
   }, [user]);
 
@@ -46,12 +46,19 @@ export default function HistoryContent() {
 
   const handleRemoveFromHistory = async (historyId: string) => {
     try {
-      console.log("Removing from history:", historyId);
-
+      await axiosInstance.delete(`/history/entry/${historyId}`);
       setHistory(history.filter((item) => item._id !== historyId));
     } catch (error) {
       console.error("Error removing from history:", error);
     }
+  };
+
+  const handleClearHistory = async () => {
+    if (!user || !window.confirm("Clear your entire watch history?")) return;
+    try {
+      await axiosInstance.delete(`/history/clear/${user._id}`);
+      setHistory([]);
+    } catch (error) { console.error("Could not clear history:", error); }
   };
 
   if (!user) {
@@ -82,10 +89,11 @@ export default function HistoryContent() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600">{history.length} videos</p>
+        <Button variant="ghost" onClick={() => void handleClearHistory()}>Clear watch history</Button>
       </div>
 
       <div className="space-y-4">
-        {history.map((item) => (
+        {history.filter((item) => item.videoid).map((item) => (
           <div key={item._id} className="flex gap-4 group">
             <Link href={`/watch/${item.videoid._id}`} className="flex-shrink-0">
               <div className="relative w-40 aspect-video bg-gray-100 rounded overflow-hidden">
@@ -106,7 +114,7 @@ export default function HistoryContent() {
                 {item.videoid.videochanel}
               </p>
               <p className="text-sm text-gray-600">
-                {item.videoid.views.toLocaleString()} views •{" "}
+                {(item.videoid.views || 0).toLocaleString()} views •{" "}
                 {formatDistanceToNow(new Date(item.videoid.createdAt))} ago
               </p>
               <p className="text-xs text-gray-500 mt-1">

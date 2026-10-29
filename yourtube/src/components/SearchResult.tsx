@@ -2,146 +2,74 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-const SearchResult = ({ query }: any) => {
-  if (!query.trim()) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">
-          Enter a search term to find videos and channels.
-        </p>
-      </div>
-    );
-  }
-  const [video, setvideos] = useState<any>(null);
-  const videos = async () => {
-    const allVideos = [
-      {
-        _id: "1",
-        videotitle: "Amazing Nature Documentary",
-        filename: "nature-doc.mp4",
-        filetype: "video/mp4",
-        filepath: "/videos/nature-doc.mp4",
-        filesize: "500MB",
-        videochanel: "Nature Channel",
-        Like: 1250,
-        views: 45000,
-        uploader: "nature_lover",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "2",
-        videotitle: "Cooking Tutorial: Perfect Pasta",
-        filename: "pasta-tutorial.mp4",
-        filetype: "video/mp4",
-        filepath: "/videos/pasta-tutorial.mp4",
-        filesize: "300MB",
-        videochanel: "Chef's Kitchen",
-        Like: 890,
-        views: 23000,
-        uploader: "chef_master",
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
-    let results = allVideos.filter(
-      (vid) =>
-        vid.videotitle.toLowerCase().includes(query.toLowerCase()) ||
-        vid.videochanel.toLowerCase().includes(query.toLowerCase())
-    );
-    setvideos(results);
-  };
+import axiosInstance from "@/lib/axiosinstance";
+import { Play } from "lucide-react";
+
+type VideoRecord = {
+  _id: string;
+  videotitle: string;
+  description?: string;
+  category?: string;
+  videochanel?: string;
+  uploader?: string;
+  views?: number;
+  createdAt?: string;
+};
+
+const SearchResult = ({ query }: { query: string }) => {
+  const [videos, setVideos] = useState<VideoRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    videos();
+    let active = true;
+    const searchVideos = async () => {
+      const term = query.trim().toLocaleLowerCase();
+      if (!term) { setVideos([]); setError(""); setLoading(false); return; }
+      setLoading(true);
+      setError("");
+      try {
+        const response = await axiosInstance.get("/video/getall");
+        const records = Array.isArray(response.data) ? response.data : [];
+        const matches = records.filter((video: VideoRecord) =>
+          [video.videotitle, video.videochanel, video.description, video.category]
+            .some((value) => String(value || "").toLocaleLowerCase().includes(term))
+        );
+        if (active) setVideos(matches);
+      } catch {
+        if (active) { setVideos([]); setError("Could not search videos. Make sure the API server is running."); }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void searchVideos();
+    return () => { active = false; };
   }, [query]);
-  if (!video) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold mb-2">No results found</h2>
-        <p className="text-gray-600">
-          Try different keywords or remove search filters
-        </p>
-      </div>
-    );
-  }
-  const hasResults = video ? video.length > 0 : true;
-  if (!hasResults) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold mb-2">No results found</h2>
-        <p className="text-gray-600">
-          Try different keywords or remove search filters
-        </p>
-      </div>
-    );
-  }
-  const vids = "/video/vdo.mp4";
+
+  if (!query.trim()) return <p className="py-12 text-center text-gray-600">Enter a search term to find videos and channels.</p>;
+  if (loading) return <p className="py-12 text-center text-gray-600">Searching videos…</p>;
+  if (error) return <p role="alert" className="py-12 text-center text-red-700">{error}</p>;
+  if (!videos.length) return <div className="py-12 text-center"><h2 className="text-xl font-semibold">No results found</h2><p className="mt-2 text-gray-600">Try different keywords.</p></div>;
+
   return (
-    <div className="space-y-6">
-      {/* Video Results */}
-      {video.length > 0 && (
-        <div className="space-y-4">
-          {video.map((video: any) => (
-            <div key={video._id} className="flex gap-4 group">
-              <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                <div className="relative w-80 aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <video
-                    src={vids}
-                    className="object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1 rounded">
-                    10:24
-                  </div>
-                </div>
-              </Link>
-
-              <div className="flex-1 min-w-0 py-1">
-                <Link href={`/watch/${video._id}`}>
-                  <h3 className="font-medium text-lg line-clamp-2 group-hover:text-blue-600 mb-2">
-                    {video.videotitle}
-                  </h3>
-                </Link>
-
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <span>{video.views.toLocaleString()} views</span>
-                  <span>•</span>
-                  <span>
-                    {formatDistanceToNow(new Date(video.createdAt))} ago
-                  </span>
-                </div>
-
-                <Link
-                  href={`/channel/${video.uploader}`}
-                  className="flex items-center gap-2 mb-2 hover:text-blue-600"
-                >
-                  <Avatar className="w-6h-6">
-                    <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                    <AvatarFallback className="text-xs">
-                      {video.videochanel[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-gray-600">
-                    {video.videochanel}
-                  </span>
-                </Link>
-
-                <p className="text-sm text-gray-700 line-clamp-2">
-                  Sample video description that would show search-relevant
-                  content and help users understand what the video is about
-                  before clicking.
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Load More Results */}
-      {hasResults && (
-        <div className="text-center py-8">
-          <p className="text-gray-600">
-            Showing {videos.length} results for "{query}"
-          </p>
-        </div>
-      )}
+    <div className="space-y-5">
+      {videos.map((video) => (
+        <article key={video._id} className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Link href={`/watch/${video._id}`} className="group relative grid aspect-video place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 via-slate-700 to-red-800 text-white sm:w-80 sm:shrink-0">
+            <span className="absolute left-3 top-3 rounded-full bg-black/25 px-2.5 py-1 text-[11px]">{video.category || "MyTube"}</span><span className="grid h-11 w-11 place-items-center rounded-full bg-white/15"><Play size={20} fill="currentColor" /></span>
+          </Link>
+          <div className="min-w-0 py-1">
+            <Link href={`/watch/${video._id}`}><h2 className="line-clamp-2 text-lg font-medium hover:text-blue-700">{video.videotitle}</h2></Link>
+            <p className="mt-2 text-sm text-gray-600">{(video.views || 0).toLocaleString()} views · {video.createdAt && !Number.isNaN(Date.parse(video.createdAt)) ? `${formatDistanceToNow(new Date(video.createdAt))} ago` : "recently"}</p>
+            <Link href={`/channel/${video.uploader || ""}`} className="mt-3 inline-flex items-center gap-2 hover:text-blue-700">
+              <Avatar className="h-7 w-7"><AvatarImage src="" /><AvatarFallback>{video.videochanel?.[0] || "M"}</AvatarFallback></Avatar>
+              <span className="text-sm text-gray-600">{video.videochanel || "MyTube creator"}</span>
+            </Link>
+            {video.description && <p className="mt-2 line-clamp-2 text-sm text-gray-700">{video.description}</p>}
+          </div>
+        </article>
+      ))}
+      <p className="py-6 text-center text-sm text-gray-500">{videos.length} result{videos.length === 1 ? "" : "s"} for “{query}”</p>
     </div>
   );
 };

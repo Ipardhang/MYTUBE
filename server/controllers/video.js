@@ -20,6 +20,9 @@ export const uploadvideo = async (req, res) => {
       const isPremium = req.body.isPremium === "true";
       const file = new video({
         videotitle: req.body.videotitle,
+        description: String(req.body.description || "").slice(0, 5000),
+        category: String(req.body.category || "Other").slice(0, 60),
+        tags: String(req.body.tags || "").split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean).slice(0, 12),
         filename: req.file.originalname,
         filepath: req.file.path,
         filetype: req.file.mimetype,
@@ -39,7 +42,7 @@ export const uploadvideo = async (req, res) => {
 };
 export const getallvideo = async (req, res) => {
   try {
-    const files = await video.find();
+    const files = await video.find().select("-filepath").lean();
     return res.status(200).send(files);
   } catch (error) {
     console.error(" error:", error);

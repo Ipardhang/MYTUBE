@@ -5,6 +5,7 @@ const userschema = mongoose.Schema({
   channelname: { type: String },
   description: { type: String },
   image: { type: String },
+  subscribedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
   joinedon: { type: Date, default: Date.now },
 });
 
