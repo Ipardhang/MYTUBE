@@ -15,6 +15,7 @@ Create `.env`:
 PORT=5000
 APP_ORIGINS=http://localhost:3000
 FIREBASE_PROJECT_ID=your-firebase-project-id
+ADMIN_EMAILS=admin@example.com
 DB_URL=mongodb+srv://<user>:<password>@<cluster>/<database>
 PROFANITY_TERMS=term1,term2
 TRANSLATION_API_URL=https://<your-libretranslate-host>/translate
@@ -37,8 +38,9 @@ The API is available at http://localhost:5000. Keep `.env` out of Git.
 - `PATCH /comment/:id/vote`
 - `POST /comment/:id/report`
 - `POST /comment/:id/translate` (LibreTranslate-compatible endpoint required)
+- `GET /comment/moderation/reports` and `PATCH /comment/:id/moderation` (Firebase email must be listed in `ADMIN_EMAILS`)
 
-Comment writes, votes and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports and edit history are stored with the comment. Reports are queued in the record and do not automatically delete a comment.
+Comment writes, votes and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports, edit history and administrator moderation actions are stored with the comment. After three recent comments, the server issues a short arithmetic challenge; rate limits and challenges are in-memory for this single-server demo. Reports are queued in the record and do not automatically delete a comment.
 
 ## Deployment notes
 
