@@ -46,7 +46,7 @@ const commentschema = mongoose.Schema(
     deleted: { type: Boolean, default: false },
     moderationStatus: { type: String, enum: ["visible", "held"], default: "visible", index: true },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 commentschema.index({ videoid: 1, commentedon: -1 });
