@@ -146,6 +146,7 @@ export const editcomment = async (req, res) => {
     await record.save();
     return res.status(200).json(record);
   } catch (error) {
+    if (error.name === "VersionError") return res.status(409).json({ message: "This comment changed elsewhere. Reload it before editing again." });
     console.error("Comment edit error:", error);
     return res.status(500).json({ message: "Could not edit comment." });
   }
