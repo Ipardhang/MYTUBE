@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { Captions, Maximize, Minimize, Pause, PictureInPicture2, Play, Settings2, Volume2, VolumeX } from "lucide-react";
 
 interface VideoPlayerProps {
@@ -111,7 +112,7 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
     if (hideTimer.current) clearTimeout(hideTimer.current);
   }, []);
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName)) return;
     if (event.key === " " || event.key.toLowerCase() === "k") { event.preventDefault(); togglePlay(); }
@@ -154,7 +155,6 @@ export default function VideoPlayer({ video }: VideoPlayerProps) {
       <video
         ref={videoRef}
         className="h-full w-full object-contain"
-        poster="/video/vdo.mp4"
         preload="metadata"
         onPlay={() => { setPlaying(true); setBuffering(false); showControls(); }}
         onPause={() => { setPlaying(false); setVisible(true); }}
