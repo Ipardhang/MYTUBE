@@ -44,6 +44,19 @@ The API is available at http://localhost:5000. Keep `.env` out of Git.
 
 Comment writes, votes and reports require a Firebase ID token, checked against the email on the MongoDB user record. Comment reports, edit history and administrator moderation actions are stored with the comment. After three recent comments, the server issues a short arithmetic challenge; rate limits and challenges are in-memory for this single-server demo. Reports are queued in the record and do not automatically delete a comment.
 
+## Membership and downloads
+
+- `GET /membership/plans`
+- `GET /membership/:userId` for status and billing history
+- `POST /membership/orders` to create or reuse a Razorpay order
+- `POST /membership/verify` to verify the payment signature and captured payment
+- `POST /membership/payments/status` to record failed or cancelled attempts
+- `POST /membership/:userId/cancel` to stop renewal
+- `GET /membership/downloads/:userId` for download history and remaining quota
+- `POST /membership/downloads/:userId/:videoId` to authorize and stream a video
+
+Membership and download mutations require a Firebase ID token matching the MongoDB account email. Video streams use a short-lived signed URL; premium access is checked again when the stream is requested. Razorpay activates a plan only after server-side signature and gateway status verification.
+
 ## Deployment notes
 
 Deploy this folder as a separate Node service (for example, Render) and set `DB_URL`, `PORT`, `APP_ORIGINS`, `VIDEO_STREAM_SECRET`, `FIREBASE_PROJECT_ID`, Razorpay test keys, and optional translation/moderation settings. Set the frontend's `NEXT_PUBLIC_BACKEND_URL` to this service's HTTPS URL.
